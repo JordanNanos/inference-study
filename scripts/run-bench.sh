@@ -9,7 +9,7 @@ activate
 #high level config
 HF_CACHE=/scratch/local/huggingface
 MODEL=meta-llama/Llama-3.3-70B-Instruct
-BENCH=8xH100SXM
+BENCH=8xH100SXM-16k
 DIR=results/$MODEL/$BENCH
 HF_CACHE=$HF_CACHE
 HF_HOME=$HF_CACHE
@@ -34,8 +34,8 @@ check_endpoint() {
 }
 
 #setup the params to sweep for performance testing
-for NUM_STEPS in 2 4 8 16; do
-    for TP in 4 8; do
+for NUM_STEPS in 1; do
+    for TP in 8 4 2; do
         #for NUM_SEQS in 512; do
             #for NUM_TOKS in 1024; do
                 mkdir -p $DIR/tp$TP-${NUM_STEPS}steps
@@ -45,7 +45,7 @@ for NUM_STEPS in 2 4 8 16; do
                 
                 #if serving directly
                 #nohup vllm serve $MODEL -tp $TP --enforce-eager --swap-space 32 --max-model-len 1024 --disable-log-requests --gpu-memory-utilization 0.99 --max-num-seqs $NUM_SEQS --max-num-batched-tokens $NUM_TOKS --num-scheduler-steps $NUM_STEPS &
-                nohup vllm serve $MODEL -tp $TP --swap-space 32 --max-model-len 1024 --disable-log-requests --gpu-memory-utilization 0.99 --num-scheduler-steps $NUM_STEPS &
+                nohup vllm serve $MODEL -tp $TP --enforce-eager --swap-space 32 --disable-log-requests --gpu-memory-utilization 0.99 --num-scheduler-steps $NUM_STEPS &
                 echo $! > save_pid.txt
 
                 echo "Checking if the model endpoint is ready..."
@@ -57,10 +57,13 @@ for NUM_STEPS in 2 4 8 16; do
                 echo "Model endpoint is ready. Running benchmark..."
                 
                 #capture changes to E2EL as concurrency increases
-                for con in 4 8 16 32 64 128 256 512; do 
-                    for input in 256; do 
-                        for output in 128; do 
-                            python -u vllm/benchmarks/benchmark_serving.py --disable-tqdm --model $MODEL --base_url $HOST --ignore-eos --max-concurrency $con --percentile-metrics ttft,tpot,itl,e2el --metric-percentiles 25,50,75,99 --random-range-ratio 0.8 --dataset-name random --request-rate inf --random-input-len ${input} --random-output-len ${output} --num-prompts 256 > $DIR/tp$TP-${NUM_STEPS}steps/${con}conn.log; 
+                for con in 1 2 4 8 16 32 64 128 ; do 
+                    for input in 16000; do 
+                        for output in 16000; do 
+                            #for random dataset
+                            python -u vllm/benchmarks/benchmark_serving.py --disable-tqdm --model $MODEL --base_url $HOST --ignore-eos --max-concurrency $con --percentile-metrics ttft,tpot,itl,e2el --metric-percentiles 25,50,75,99 --random-range-ratio 0.8 --dataset-name random --request-rate inf --random-input-len ${input} --random-output-len ${output} --num-prompts 256 > $DIR/tp$TP-${NUM_STEPS}steps/${con}conn.log;
+                            #for sharegpt
+                            #python -u vllm/benchmarks/benchmark_serving.py --disable-tqdm --model $MODEL --base_url $HOST --ignore-eos --max-concurrency $con --percentile-metrics ttft,tpot,itl,e2el --metric-percentiles 25,50,75,99 --dataset-name sharegpt --dataset-path ./ShareGPT_V3_unfiltered_cleaned_split.json --request-rate inf --num-prompts 256 > $DIR/tp$TP-${NUM_STEPS}steps/${con}conn.log; 
                         done
                     done
                 done

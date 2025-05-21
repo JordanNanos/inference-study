@@ -2,3 +2,4 @@
 vllm
 *.out
 save_pid.txt
+ShareGPT*
