@@ -15,11 +15,6 @@ Pull latest docker image for vllm's openai compatible server
 docker pull vllm/vllm-openai:latest
 ```
 
-Check that model files are available. if no, download them from huggingface 
-```
-ls $HF_CACHE
-```
-
 Clone the latest version of vllm from github, for the benchmark script
 ```
 git clone https://github.com/vllm-project/vllm.git
@@ -32,6 +27,14 @@ source .vllm/bin/activate
 pip install uv
 uv pip install vllm
 uv pip install pandas datasets matplotlib #needed for the benchmark script and generating plots
+```
+
+
+Check that model files are available. if no, download them from huggingface 
+```
+ls $HF_CACHE
+uv pip install -U "huggingface_hub[cli]"
+huggingface-clie download meta-llama/Llama-3.3-70B-Instruct
 ```
 
 Launch the benchmark to measure runs with both tp 4 and tp 8 with the following script:
