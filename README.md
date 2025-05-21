@@ -34,9 +34,18 @@ uv pip install vllm
 uv pip install pandas datasets matplotlib #needed for the benchmark script and generating plots
 ```
 
-Launch the -tp 8 benchmark with the following script:
+Launch the benchmark to measure runs with both tp 4 and tp 8 with the following script:
 ```
-sh scripts/run-tp8-bench.sh
-``
+sh scripts/run-bench.sh
+```
 
+Note: this script includes a number of assumptions
+* runs without docker
+* tests tp 4 and tp 8 only
+* sweeps --num-scheduler-steps from 2 to 16 to test for best performance on vLLM
+* sweeps concurrency from 4 to 512 reqs to capture changes in E2EL as concurrency increases
+* fixes input at 256 tokens, output at 128 tokens 
+* log file paths are hard coded
+
+view results in the `results/` directory
 
