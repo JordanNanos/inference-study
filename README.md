@@ -34,7 +34,7 @@ Check that model files are available. if no, download them from huggingface
 ```
 ls $HF_CACHE
 uv pip install -U "huggingface_hub[cli]"
-huggingface-clie download meta-llama/Llama-3.3-70B-Instruct
+huggingface-cli download meta-llama/Llama-3.3-70B-Instruct
 ```
 
 Launch the benchmark to measure runs with both tp 4 and tp 8 with the following script:
